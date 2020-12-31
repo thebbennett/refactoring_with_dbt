@@ -1,15 +1,8 @@
-Welcome to your new dbt project!
+I started writing SQL in 2020. I made many mistakes. A year later, I'd like to think I'm a better data engineer. This project contains my attempt to refactor some code I've written in 2020 with better practices, proper styling, and of course dbt.
 
-### Using the starter project
+## Project 1: Mobilize Sign Ups
+**Overview**
+Sunrise, like many other progressive organizations, uses Mobilize.us as our events tool. Staff and hub members can create events in one of our 3 committees. Backend users can add up to 2 custom questions per event. Volunteers who sign up for events can opt in to text and email reminders to complete their shift. Volunteers can also confirm or cancel their shift.
 
-Try running the following commands:
-- dbt run
-- dbt test
-
-
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](http://slack.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+**Challenge**
+I need to transform Mobilize data often in my role. Often I need to pivot the participations data based on the timeslot (day and time of shift).
