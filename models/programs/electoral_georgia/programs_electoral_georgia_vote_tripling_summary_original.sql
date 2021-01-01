@@ -76,7 +76,7 @@ base as (
    sum(case when shift_day = '2021-01-05'::date
        and shift_start_time = '03:00 PM' then 1 end) as e_day_01_05_shift_3pm
 
- 
+
 
    from final
 
