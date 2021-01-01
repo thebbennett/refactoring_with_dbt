@@ -25,7 +25,7 @@ base as (
 
     status,
 
-    replace(replace(part.custom_field_values, '[',''), ']', '') as questions,
+    replace(replace(rsvps.custom_field_values, '[',''), ']', '') as questions,
 
     rsvp_created_at,
 
@@ -34,7 +34,7 @@ base as (
     event_end_at,
 
     -- duplicates exists in the table due to error in loading script
-    row_number() over (partition by part.id order by part.created_date::date desc) = 1 as is_most_recent
+    row_number() over (partition by part.id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
 
   from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
 
@@ -42,7 +42,7 @@ base as (
 
     on part.event_id = events.event_id
 
-  left join {{ ref('stg_mobilize_timeslots_c4')}} timeslots
+  left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
 
     on timeslots.timeslot_id = part.timeslot_id
 

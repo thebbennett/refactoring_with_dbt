@@ -25,7 +25,7 @@ base as (
 
     status,
 
-    replace(replace(part.custom_field_values, '[',''), ']', '') as questions,
+    replace(replace(rsvps.custom_field_values, '[',''), ']', '') as questions,
 
     rsvp_created_at,
 
@@ -34,17 +34,17 @@ base as (
     event_end_at,
 
     -- duplicates exists in the table due to error in loading script
-    row_number() over (partition by part.id order by part.created_date::date desc) = 1 as is_most_recent
+    row_number() over (partition by part.id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
 
-  from  {{ ref('stg_mobilize_rsvps_c4')}} rsvps
+    from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
 
-  left join {{ ref('stg_mobilize_events_c4')}} events
+    left join {{ ref('stg_mobilize_events_ie')}} events
 
-    on part.event_id = events.event_id
+      on part.event_id = events.event_id
 
-  left join {{ ref('stg_mobilize_timeslots_c4')}} timeslots
+    left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
 
-    on timeslots.timeslot_id = part.timeslot_id
+      on timeslots.timeslot_id = part.timeslot_id
 
    where
 
@@ -124,17 +124,24 @@ base as (
    select
 
    event_location as hub,
+
    sum(case when shift_day = '2020-12-29'::date then 1 end) as tuesday_12_29_shifts,
+
    sum(case when shift_day = '2020-12-30'::date then 1 end) as wednesday_12_30_shifts,
+
    sum(case when shift_day = '2020-12-31'::date then 1 end) as thursday_12_31_shifts,
+
    sum(case when shift_day = '2021-01-05'::date
+
        and shift_start_time = '07:00 AM' then 1 end) as e_day_01_05_shift_7am,
+
    sum(case when shift_day = '2021-01-05'::date
+
        and shift_start_time = '11:00 AM' then 1 end) as  e_day_01_05_shift_11am,
+
    sum(case when shift_day = '2021-01-05'::date
+
        and shift_start_time = '03:00 PM' then 1 end) as e_day_01_05_shift_3pm
-
-
 
    from final
 
