@@ -3,38 +3,82 @@
 -- We do not remove Cancelled shifts. These data sync to a Google Spreadsheet and organizers need to see when a volunteer has cancelled.
 -- One custom question was set up for the Mobilize sign up to ask volunteers if they want to be a Vote Tripling Captain
 
+
+{% set event_shifts_query %}
+
+select
+
+  replace(case
+
+    when extract(hour from timeslots.event_start_at::timestamp) > 12 then
+
+      to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_AM') else
+
+    to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_PM') end, ' ', '') as shift_start_time
+
+
+from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
+
+left join {{ ref('stg_mobilize_events_ie')}} events
+
+  on rsvps.event_id = events.event_id
+
+left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
+
+  on rsvps.timeslot_id = timeslots.timeslot_id
+
+where
+
+  events.event_name ilike '%Vote Tripling%'
+
+  and events.event_created_at::date > '2020-12-15'::date
+
+group by 1
+
+order by 1
+{% endset %}
+
+{% set results = run_query(event_shifts_query) %}
+
+{% if execute %}
+{# Return the first column #}
+{% set results_list = results.columns[0].values() %}
+{% else %}
+{% set results_list = [] %}
+{% endif %}
+
 with
 
 base as (
 
   select
 
-    rsvp_id,
+    rsvps.rsvp_id,
 
-    first_name,
+    rsvps.first_name,
 
-    last_name,
+    rsvps.last_name,
 
-    email,
+    rsvps.email,
 
-    phone,
+    rsvps.phone,
 
-    event_name,
+    events.event_name,
 
-    event_id,
+    events.event_id,
 
-    status,
+    rsvps.status,
 
     replace(replace(rsvps.custom_field_values, '[',''), ']', '') as questions,
 
-    rsvp_created_at,
+    rsvps.rsvp_created_at,
 
-    event_start_at,
+    timeslots.event_start_at,
 
-    event_end_at,
+    timeslots.event_end_at,
 
     -- duplicates exists in the table due to error in loading script
-    row_number() over (partition by part.id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
+    row_number() over (partition by rsvps.rsvp_id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
 
     from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
 
@@ -60,9 +104,9 @@ base as (
 
   select
 
-    signup_date,
+    rsvp_created_at,
 
-    id,
+    rsvp_id,
 
     first_name,
 
@@ -121,29 +165,21 @@ base as (
 
  ), summary as (
 
-   select
+  select
 
    event_location as hub,
 
-   sum(case when shift_day = '2020-12-29'::date then 1 end) as tuesday_12_29_shifts,
+    {% for shift_start_time in results_list  %}
 
-   sum(case when shift_day = '2020-12-30'::date then 1 end) as wednesday_12_30_shifts,
+    sum(case when shift_start_time = '{{ shift_start_time }}' then 1 end) as {{ shift_start_time }}
 
-   sum(case when shift_day = '2020-12-31'::date then 1 end) as thursday_12_31_shifts,
+    {%- if not loop.last -%}
+      ,
+    {%- endif -%}
 
-   sum(case when shift_day = '2021-01-05'::date
+    {% endfor %}
 
-       and shift_start_time = '07:00 AM' then 1 end) as e_day_01_05_shift_7am,
-
-   sum(case when shift_day = '2021-01-05'::date
-
-       and shift_start_time = '11:00 AM' then 1 end) as  e_day_01_05_shift_11am,
-
-   sum(case when shift_day = '2021-01-05'::date
-
-       and shift_start_time = '03:00 PM' then 1 end) as e_day_01_05_shift_3pm
-
-   from final
+   from vote_tripling_shifts
 
    where status != 'CANCELLED'
 

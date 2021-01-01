@@ -9,42 +9,42 @@ base as (
 
   select
 
-    rsvp_id,
+    rsvps.rsvp_id,
 
-    first_name,
+    rsvps.first_name,
 
-    last_name,
+    rsvps.last_name,
 
-    email,
+    rsvps.email,
 
-    phone,
+    rsvps.phone,
 
-    event_name,
+    events.event_name,
 
-    event_id,
+    events.event_id,
 
-    status,
+    rsvps.status,
 
     replace(replace(rsvps.custom_field_values, '[',''), ']', '') as questions,
 
-    rsvp_created_at,
+    rsvps.rsvp_created_at,
 
-    event_start_at,
+    timeslots.event_start_at,
 
-    event_end_at,
+    timeslots.event_end_at,
 
     -- duplicates exists in the table due to error in loading script
-    row_number() over (partition by part.id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
+    row_number() over (partition by rsvps.rsvp_id order by rsvps.rsvp_created_at::timestamp desc) = 1 as is_most_recent
 
-  from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
+    from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
 
-  left join {{ ref('stg_mobilize_events_ie')}} events
+    left join {{ ref('stg_mobilize_events_ie')}} events
 
-    on rsvps.event_id = events.event_id
+      on rsvps.event_id = events.event_id
 
-  left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
+    left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
 
-    on rsvps.timeslot_id = timeslots.timeslot_id
+      on rsvps.timeslot_id = timeslots.timeslot_id
 
    where
 
@@ -60,9 +60,9 @@ base as (
 
   select
 
-    signup_date,
+    rsvp_created_at,
 
-    id,
+    rsvp_id,
 
     first_name,
 
