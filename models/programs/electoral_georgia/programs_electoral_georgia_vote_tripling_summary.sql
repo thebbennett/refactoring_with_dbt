@@ -3,6 +3,50 @@
 -- We do not remove Cancelled shifts. These data sync to a Google Spreadsheet and organizers need to see when a volunteer has cancelled.
 -- One custom question was set up for the Mobilize sign up to ask volunteers if they want to be a Vote Tripling Captain
 
+
+{% set event_shifts_query %}
+
+select
+
+  replace(case
+
+    when extract(hour from timeslots.event_start_at::timestamp) > 12 then
+
+      to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_AM') else
+
+    to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_PM') end, ' ', '') as shift_start_time
+
+
+from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
+
+left join {{ ref('stg_mobilize_events_ie')}} events
+
+  on rsvps.event_id = events.event_id
+
+left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
+
+  on rsvps.timeslot_id = timeslots.timeslot_id
+
+where
+
+  events.event_name ilike '%Vote Tripling%'
+
+  and events.event_created_at::date > '2020-12-15'::date
+
+group by 1
+
+order by 1
+{% endset %}
+
+{% set results = run_query(event_shifts_query) %}
+
+{% if execute %}
+{# Return the first column #}
+{% set results_list = results.columns[0].values() %}
+{% else %}
+{% set results_list = [] %}
+{% endif %}
+
 with
 
 base as (
@@ -118,4 +162,27 @@ base as (
 
   order by 1 asc nulls last
 
-) select * from vote_tripling_shifts
+
+ ), summary as (
+
+  select
+
+   event_location as hub,
+
+    {% for shift_start_time in results_list  %}
+
+    sum(case when shift_start_time = '{{ shift_start_time }}' then 1 end) as {{ shift_start_time }}
+
+    {%- if not loop.last -%}
+      ,
+    {%- endif -%}
+
+    {% endfor %}
+
+   from vote_tripling_shifts
+
+   where status != 'CANCELLED'
+
+   group by 1
+
+   ) select * from summary
