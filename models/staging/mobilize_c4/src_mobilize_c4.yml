@@ -1,8 +1,8 @@
 version: 2
 
 sources:
-    - name: sun_mobilize
-      description: Mobilize IE committee API mirror in Redshift
+    - name: sunrise_mobilize
+      description: Mobilize c4 committee API mirror in Redshift
       database: dev
       tables:
         - name: event_tags
@@ -15,7 +15,7 @@ sources:
                 - not_null
 
         - name: events
-          description: IE events data
+          description: Raw events data
           columns:
             - name: id
               description: Primary key for events.
@@ -36,7 +36,7 @@ sources:
               description: Date user created the event in Mobilize.
 
             - name: event_campaign__slug
-              description: Users can create campaigns to group events. Eg: 'Georgia', 'Victory Fest'.
+              description: Users can create campaigns to group events; eg Georgia, Victory Fest.
 
 
         - name: participations

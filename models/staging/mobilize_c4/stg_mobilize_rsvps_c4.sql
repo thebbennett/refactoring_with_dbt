@@ -8,23 +8,23 @@ event_timezone as (
 
     timezone
 
-  from {{ source('sun_mobilize', 'events') }}
+  from {{ source('sunrise_mobilize', 'events') }}
 
 
 
-), staged_rsvps as ()
+), staged_rsvps as (
 
   select
 
     id as rsvp_id,
 
-    convert_timezone('UTC', 'America/New_York', created_date) as created_at,
+    {{ standarize_timezone('created_date') }} as rsvp_created_at,
 
-    convert_timezone('UTC', 'America/New_York', modified_date) as modified_at,
+    {{ standarize_timezone('modified_date') }} as rsvp_modified_at,
 
     user_id,
 
-    user__modified_date
+    user__modified_date,
 
     user__given_name as first_name,
 
@@ -45,9 +45,9 @@ event_timezone as (
     timeslot_id,
 
     -- change event start and end times to be in the timezone of the event
-    convert_timezone('UTC', event_timezone.timezone, start_date) as event_start_at,
+    {{ standarize_timezone('start_date', 'event_timezone.timezone') }} as event_start_at,
 
-    convert_timezone('UTC', event_timezone.timezone, end_date) as event_end_at,
+    {{ standarize_timezone('end_date', 'event_timezone.timezone') }} as event_end_at,
 
     override_start_date,
 
@@ -87,7 +87,7 @@ event_timezone as (
 
     email_at_signup,
 
-    given_name_at_signup, as first_name_at_signup,
+    given_name_at_signup as first_name_at_signup,
 
     family_name_at_signup as last_name_at_signup,
 
@@ -100,7 +100,7 @@ event_timezone as (
     event_type_name
 
 
-  from {{ source('sun_mobilize', 'participations')}}
+  from {{ source('sunrise_mobilize', 'participations')}}
 
   left join event_timezone using(event_id)
 
