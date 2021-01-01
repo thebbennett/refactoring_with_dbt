@@ -40,11 +40,11 @@ base as (
 
     left join {{ ref('stg_mobilize_events_ie')}} events
 
-      on part.event_id = events.event_id
+      on rsvps.event_id = events.event_id
 
     left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
 
-      on timeslots.timeslot_id = part.timeslot_id
+      on rsvps.timeslot_id = timeslots.timeslot_id
 
    where
 

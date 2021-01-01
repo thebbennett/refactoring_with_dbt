@@ -1,4 +1,4 @@
-{% macro standarize_timezone(column_name, timezone = 'America/NewYork') %}
+{% macro standarize_timezone(column_name, timezone = 'America/New_York') %}
 
 {#-
 We standarize timezones as America/New York timezones, including:
