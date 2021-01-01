@@ -36,9 +36,9 @@ base as (
     -- duplicates exists in the table due to error in loading script
     row_number() over (partition by part.id order by part.created_date::date desc) = 1 as is_most_recent
 
-  from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
+  from  {{ ref('stg_mobilize_rsvps_c4')}} rsvps
 
-  left join {{ ref('stg_mobilize_events_ie')}} events
+  left join {{ ref('stg_mobilize_events_c4')}} events
 
     on part.event_id = events.event_id
 
@@ -118,4 +118,28 @@ base as (
 
   order by 1 asc nulls last
 
-) select * from vote_tripling_shifts
+
+ ), summary as (
+
+   select
+
+   event_location as hub,
+   sum(case when shift_day = '2020-12-29'::date then 1 end) as tuesday_12_29_shifts,
+   sum(case when shift_day = '2020-12-30'::date then 1 end) as wednesday_12_30_shifts,
+   sum(case when shift_day = '2020-12-31'::date then 1 end) as thursday_12_31_shifts,
+   sum(case when shift_day = '2021-01-05'::date
+       and shift_start_time = '07:00 AM' then 1 end) as e_day_01_05_shift_7am,
+   sum(case when shift_day = '2021-01-05'::date
+       and shift_start_time = '11:00 AM' then 1 end) as  e_day_01_05_shift_11am,
+   sum(case when shift_day = '2021-01-05'::date
+       and shift_start_time = '03:00 PM' then 1 end) as e_day_01_05_shift_3pm
+
+
+
+   from final
+
+   where status != 'CANCELLED'
+
+   group by 1
+
+   ) select * from summary

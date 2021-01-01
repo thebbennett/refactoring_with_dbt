@@ -1,0 +1,76 @@
+version: 2
+
+sources:
+    - name: sunrise2020_mobilize
+      description: Mobilize coordinated committee API mirror in Redshift
+      database: dev
+      tables:
+        - name: event_tags
+          description: Tags attached to events
+          columns:
+            - name: id
+              description: Primary key for event_tags.
+              tests:
+                - unique
+                - not_null
+
+        - name: events
+          description: Raw events data
+          columns:
+            - name: id
+              description: Primary key for events.
+              tests:
+                - unique
+                - not_null
+
+            - name: title
+              description: Name of the event.
+
+            - name: timezone
+              description: Timezone of the event. Use when converting timeslot days and times.
+
+            - name: event_type
+              description: Custom event type set up in Mobilize back end.
+
+            - name: created_date
+              description: Date user created the event in Mobilize.
+
+            - name: event_campaign__slug
+              description: Users can create campaigns to group events; eg Georgia, Victory Fest.
+
+
+        - name: participations
+          description: Sign up data for each event. Joins in event_id
+          columns:
+            - name: id
+              description: Primary key for participations
+              tests:
+                - unique
+                - not_null
+
+        - name: sms_opt_ins
+          description: SMS opt in for reminds for participants. Joins on user_id
+          columns:
+            - name: id
+              description: Primary key for sms_opt_ins
+              tests:
+                - unique
+                - not_null
+
+        - name: timeslots
+          description: Shift days and times. Joins on timeslot_id in participations table.
+          columns:
+            - name: id
+              description: Primary key for timeslots
+              tests:
+                - unique
+                - not_null
+
+        - name: users
+          description: Raw data for users. Does not contain all user_ids in participations table.
+          columns:
+            - name: id
+              description: Primary key for users. Missing user_ids from participations table.
+              tests:
+                - unique
+                - not_null
