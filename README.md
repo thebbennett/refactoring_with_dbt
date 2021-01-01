@@ -21,11 +21,6 @@ Sunrise has 3 Mobilize committees:
     |___________________|______________|________________________|
 
 
-
-
-### Original Code  
-The original script to produce the summary of Vote Tripling RSVPs for our Georgia 2021 runoff organizing is here.  
-
 ### Solution  
 **Staging the data**  
 I needed to stage the same 5 tables in all 3 schemas in the same manner. To do that, I wrote a [5 macros](https://github.com/thebbennett/refactoring_with_dbt/tree/master/models/staging/mobilize_ie) that take the `schema_name` as a paramter. These macros were then called 3 times each to stage the following tables from the Mobilize schemas:  
@@ -44,5 +39,53 @@ A common operation when working with the Mobilize schema is to convert a timesta
 
 I built a [macro](https://github.com/thebbennett/refactoring_with_dbt/blob/master/macros/standarize_timezone.sql) to simplify this operation and to anticipate a situation where we might want to convert the `created_at` etc timestamps to a different timezone.   
 
+**Models**  
+I refactored the [original script](https://github.com/thebbennett/refactoring_with_dbt/blob/master/models/programs/electoral_georgia/programs_electoral_georgia_vote_tripling_summary_original.sql) as a [dbt model with jinja](https://github.com/thebbennett/refactoring_with_dbt/blob/master/models/programs/electoral_georgia/programs_electoral_georgia_vote_tripling_summary.sql)  
+
+To pivot the data on `shift_start_at`, I wrote the following jinja  
+
+```
+{% set event_shifts_query %}
+
+select
+
+  replace(case
+
+    when extract(hour from timeslots.event_start_at::timestamp) > 12 then
+
+      to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_AM') else
+
+    to_char(timeslots.event_start_at::timestamp, 'Mon_Day_DD_HH_MI_PM') end, ' ', '') as shift_start_time
 
 
+from  {{ ref('stg_mobilize_rsvps_ie')}} rsvps
+
+left join {{ ref('stg_mobilize_events_ie')}} events
+
+  on rsvps.event_id = events.event_id
+
+left join {{ ref('stg_mobilize_timeslots_ie')}} timeslots
+
+  on rsvps.timeslot_id = timeslots.timeslot_id
+
+where
+
+  events.event_name ilike '%Vote Tripling%'
+
+  and events.event_created_at::date > '2020-12-15'::date
+
+group by 1
+
+order by 1
+{% endset %}
+
+{% set results = run_query(event_shifts_query) %}
+
+{% if execute %}
+{# Return the first column #}
+{% set results_list = results.columns[0].values() %}
+{% else %}
+{% set results_list = [] %}
+{% endif %}
+
+```
